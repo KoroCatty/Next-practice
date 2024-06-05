@@ -11,8 +11,9 @@ const NewsDetailPage = ({ params }: { params: { slug: string } }) => {
     notFound()
   }
   return (
-    <article className="container mx-auto text-center">
+    <article className="container mx-auto text-center ">
       <header className="">
+        <h1 className="text-[4rem] font-bold">Parallel ROUTE</h1>
         {/* 画像ページへ遷移 */}
         <Link href={`/news/${newsItem?.slug}/image`}>
           <Image src={`/images/news/${newsItem?.image}`} alt={newsItem?.title!} width={200} height={200} className="object-cover hover:opacity-60" />
@@ -21,8 +22,6 @@ const NewsDetailPage = ({ params }: { params: { slug: string } }) => {
         <time dateTime={newsItem?.date}>{newsItem?.date}</time>
       </header>
       <p>{newsItem?.content}</p>
-
-
     </article>
   )
 }
