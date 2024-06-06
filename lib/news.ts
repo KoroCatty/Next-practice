@@ -1,52 +1,78 @@
-import { DUMMY_NEWS } from '@/dummy-news'; // ダミーニュースデータをインポート
+import sql from 'better-sqlite3'
+
+
+const db = sql('data.db');
+
+type News = {
+  id: string,
+  slug: string,
+  title: string,
+  image: string,
+  date: string
+  content: string,
+};
 
 // 全てのニュースを取得する関数
-export function getAllNews() {
-  return DUMMY_NEWS; // ダミーニュースデータを返す
+export async function getAllNews(): Promise<News[]>{
+  // return DUMMY_NEWS; // ダミーニュースデータを返す
+  const news = await db.prepare('SELECT * FROM news').all() as News[];
+  await new Promise((resolve => setTimeout(resolve, 2000)))
+  return news;
 }
 
 // 最新のニュース（先頭から3件）を取得する関数
-export function getLatestNews() {
-  return DUMMY_NEWS.slice(0, 3); // ダミーニュースデータの先頭3件を返す
+export async function getLatestNews() {
+  const latestNews = db
+    .prepare('SELECT * FROM news ORDER BY date DESC LIMIT 3')
+    .all();
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+  return latestNews;
 }
 
 // 利用可能なニュースの年を取得する関数
-export function getAvailableNewsYears() {
-  return DUMMY_NEWS.reduce<number[]>((years, news) => { // Explicitly type the accumulator as number[]
-    const year = new Date(news.date).getFullYear(); // ニュースの日付から年を取得
-    if (!years.includes(year)) { // 年がまだリストに含まれていない場合
-      years.push(year); // リストに年を追加
-    }
-    return years; // 更新された年リストを返す
-  }, []).sort((a, b) => b - a); // 年のリストを降順にソート
+export async function getAvailableNewsYears() {
+  const years = db
+    .prepare("SELECT DISTINCT strftime('%Y', date) as year FROM news")
+    .all()
+    .map((year) => year.year);
+
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+
+  return years;
 }
 
 // 利用可能なニュースの月を取得する関数
-export function getAvailableNewsMonths(year: number) {
-  return DUMMY_NEWS.reduce<number[]>((months, news) => { // 配列を月ごとに集約
-    const newsYear = new Date(news.date).getFullYear(); // ニュースの日付から年を取得
-    if (newsYear === +year) { //! 文字列として渡される可能性のある値を数値に変換する
-      const month = new Date(news.date).getMonth(); // ニュースの日付から月を取得
-      if (!months.includes(month)) { // 月がまだリストに含まれていない場合
-        months.push(month + 1); // リストに月を追加（0始まりのため1を加算）
-      }
-    }
-    return months; // 更新された月リストを返す
-  }, []).sort((a, b) => b - a); // 月のリストを降順にソート
+export function getAvailableNewsMonths(year) {
+  return db
+    .prepare(
+      "SELECT DISTINCT strftime('%m', date) as month FROM news WHERE strftime('%Y', date) = ?"
+    )
+    .all(year)
+    .map((month) => month.month);
 }
 
 // 指定された年のニュースを取得する関数 ( +year で数値に変換する裏技)
-export function getNewsForYear(year) {
-  return DUMMY_NEWS.filter(
-    (news) => new Date(news.date).getFullYear() === +year // ニュースの日付が指定された年と一致する場合
-  );
+export async function getNewsForYear(year) {
+  const news = db
+    .prepare(
+      "SELECT * FROM news WHERE strftime('%Y', date) = ? ORDER BY date DESC"
+    )
+    .all(year);
+
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+
+  return news;
 }
 
 // 指定された年と月のニュースを取得する関数
-export function getNewsForYearAndMonth(year, month) {
-  return DUMMY_NEWS.filter((news) => {
-    const newsYear = new Date(news.date).getFullYear(); // ニュースの日付から年を取得
-    const newsMonth = new Date(news.date).getMonth() + 1; // ニュースの日付から月を取得（0始まりのため1を加算）
-    return newsYear === +year && newsMonth === +month; // ニュースの年と月が指定された年と月と一致する場合
-  });
+export async function getNewsForYearAndMonth(year, month) {
+  const news = db
+    .prepare(
+      "SELECT * FROM news WHERE strftime('%Y', date) = ? AND strftime('%m', date) = ? ORDER BY date DESC"
+    )
+    .all(year, month);
+
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+
+  return news;
 }
